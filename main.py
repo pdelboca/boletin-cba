@@ -17,6 +17,11 @@ _DATA_PATH = os.path.realpath(os.path.dirname(__file__)) + "/data/"
 
 
 def pdf_to_csv():
+    """
+    Iterates throught all the pdf stored in ./data/pdf/ folder and export its 
+    content to the file data.csv.
+    The format of the csv file should have two columns: id and text
+    """
     pdf_data_path = _DATA_PATH + "pdf/"   
     csv_data_file = _DATA_PATH + "data.csv"
     with open(csv_data_file, "w", newline='') as csvfile:        
