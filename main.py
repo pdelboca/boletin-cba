@@ -10,12 +10,12 @@ References:
 
 """
 import os.path
-import sys
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfFileReader, utils
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 import re
 import progressbar
+import csv
 
 _DATA_PATH = os.path.realpath(os.path.dirname(__file__)) + "/data/"
 _PDF_PATH = _DATA_PATH + "pdfs/"
@@ -98,22 +98,30 @@ def pdf_to_csv():
     content to the file data.csv.
     The format of the csv file should have two columns: id and text
     """
-    pdf_data_path = _DATA_PATH + "pdf/"   
+    bar = progressbar.ProgressBar()    
     csv_data_file = _DATA_PATH + "data.csv"
     with open(csv_data_file, "w", newline='') as csvfile:        
         data_writer = csv.writer(csvfile)
         data_writer.writerow(["id","texto"])        
-        for fn in os.listdir(pdf_data_path):
-            file_path = os.path.join(pdf_data_path, fn)         
+        for fn in bar(os.listdir(_PDF_PATH)):
+            file_path = os.path.join(_PDF_PATH, fn)            
             if file_path.endswith(".pdf"):
-                input_file = PdfFileReader(open(file_path, 'rb'))
-                text = ""
-                for p in range(input_file.getNumPages()):
-                    text += input_file.getPage(p).extractText() + " "
-                data_writer.writerow([fn,text])
+                try:
+                    input_file = PdfFileReader(open(file_path, 'rb'))
+                    text = ""
+                    for p in range(input_file.getNumPages()):
+                        text += input_file.getPage(p).extractText() + " "    
+                except utils.PdfReadError as e:
+                    print("Error al leer el PDF: {0}".format(fn))
+                except Exception as e:
+                    print("Error desconocido en el PDF: {0}".format(fn))
+                    print("Error: {0}".format(e))
+                else:
+                    data_writer.writerow([fn,text])
+            
         
 
 if __name__ == "__main__":
-    #pdf_to_csv()
     #scrapear_url_boletines()    
-    descargar_boletines()
+    #descargar_boletines()
+    pdf_to_csv()
