@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Tue Feb  2 18:01:54 2016
 
@@ -7,15 +6,18 @@ Created on Tue Feb  2 18:01:54 2016
 References:
 ===========
  - PyPDF2: https://github.com/mstamy2/PyPDF2
-
+ - Tika: http://www.hackzine.org/using-apache-tika-from-python-with-jnius.html
 """
 import os.path
-from PyPDF2 import PdfFileReader, utils
+#from PyPDF2 import PdfFileReader, utils
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 import re
 import progressbar
 import csv
+import os
+os.environ['CLASSPATH'] = "./lib/tika-app-1.11.jar"
+from jnius import autoclass
 
 _DATA_PATH = os.path.realpath(os.path.dirname(__file__)) + "/data/"
 _PDF_PATH = _DATA_PATH + "pdfs/"
@@ -99,27 +101,26 @@ def pdf_to_csv():
     The format of the csv file should have two columns: id and text
     """
     bar = progressbar.ProgressBar()    
-    csv_data_file = _DATA_PATH + "data.csv"
+    csv_data_file = _DATA_PATH + "data_tika.csv"
+    Tika = autoclass('org.apache.tika.Tika')
+    Metadata = autoclass('org.apache.tika.metadata.Metadata')
+    FileInputStream = autoclass('java.io.FileInputStream')
+    tika = Tika()
+    meta = Metadata()
     with open(csv_data_file, "w", newline='') as csvfile:        
         data_writer = csv.writer(csvfile)
         data_writer.writerow(["id","texto"])        
         for fn in bar(os.listdir(_PDF_PATH)):
-            file_path = os.path.join(_PDF_PATH, fn)            
-            if file_path.endswith(".pdf"):
+            filename = os.path.join(_PDF_PATH, fn)            
+            if filename.endswith(".pdf"):
                 try:
-                    input_file = PdfFileReader(open(file_path, 'rb'))
-                    text = ""
-                    for p in range(input_file.getNumPages()):
-                        text += input_file.getPage(p).extractText() + " "    
-                except utils.PdfReadError as e:
-                    print("Error al leer el PDF: {0}".format(fn))
+                    text = tika.parseToString(FileInputStream(filename), meta)
                 except Exception as e:
                     print("Error desconocido en el PDF: {0}".format(fn))
                     print("Error: {0}".format(e))
                 else:
-                    data_writer.writerow([fn,text])
-            
-        
+                    data_writer.writerow([fn,text])            
+
 
 if __name__ == "__main__":
     #scrapear_url_boletines()    
