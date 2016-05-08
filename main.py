@@ -120,6 +120,7 @@ def pdf_to_csv():
                     print("Error desconocido en el PDF: {0}".format(fn))
                     print("Error: {0}".format(e))
                 else:
+                    #TODO: Check if text is not empty
                     text = limpiar_texto(text)
                     data_writer.writerow([fn,text])
 
@@ -149,6 +150,7 @@ def pdf_to_csv_with_PyPDF():
                     print("Error desconocido en el PDF: {0}".format(fn))
                     print("Error: {0}".format(e))
                 else:
+                    #TODO: Check if text is not empty
                     data_writer.writerow([fn,text])
 
 
@@ -157,6 +159,7 @@ def limpiar_texto(text):
     Funcion para limpiar los execivos end of lines que vienen tras la extraccion
     del texto en pdf.
     """
+    # TODO: Use NLTK's sentence segmentation. 
     new_text = ""
     for line in text.split('\n'):
         if len(line) > 0:
@@ -168,6 +171,6 @@ def limpiar_texto(text):
 if __name__ == "__main__":
     #scrapear_url_boletines()
     #descargar_boletines()
-    #pdf_to_csv()
+    pdf_to_csv()
     #pdf_to_csv_with_PyPDF()
     #limpiar_texto()
