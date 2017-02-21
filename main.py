@@ -18,11 +18,11 @@ import csv
 import os
 import re
 os.environ['CLASSPATH'] = "./lib/tika-app-1.11.jar"
-from jnius import autoclass
+#from jnius import autoclass
 
-_DATA_PATH = os.path.realpath(os.path.dirname(__file__)) + "/data/"
-_PDF_PATH = _DATA_PATH + "pdfs/"
-_TXT_BOLETINES_PATH = _DATA_PATH + "urls_boletin.txt"
+_DATA_PATH = os.path.join(os.path.realpath(os.path.dirname(__file__)), "data")
+_PDF_PATH = os.path.join(_DATA_PATH, "pdfs")
+_TXT_BOLETINES_PATH = os.path.join(_DATA_PATH, "urls_boletin.txt")
 
 def scrapear_url_boletines():
     """
@@ -38,9 +38,9 @@ def scrapear_url_boletines():
         que realmente sean. Si hay otros archivos en pdf, tambien los descarga.
     """
     pdf_links = []
-    for year in range(2007,2017):
+    for year in range(2007, 2018):
         print("Scrapeando links del {0}".format(year))
-        for month in range(1,13):
+        for month in range(1, 13):
             url = "http://boletinoficial.cba.gov.ar/{0}/{1}/".format(year, str(month).zfill(2))
             req = Request(url)
             try:
@@ -69,6 +69,7 @@ def descargar_boletines():
     Nota:
         - Utiliza los links obtenidos en el método scrapear_url_boletines
     """
+    os.makedirs(_PDF_PATH, exist_ok=True)
     if not os.path.isfile(_TXT_BOLETINES_PATH):
         print("No existe el archivo: {0}".format(_TXT_BOLETINES_PATH))
         print("Ejecute el metodo scrapear_url_boletines para obtener las url.")
@@ -79,7 +80,7 @@ def descargar_boletines():
         bar = progressbar.ProgressBar()
         for url in bar(urls):
             filename = url.split("/")[-1]
-            file_path = _PDF_PATH + filename
+            file_path = os.path.join(_PDF_PATH, filename)
             req = Request(url)
             try:
                 pdf_file = urlopen(req)
@@ -102,7 +103,7 @@ def pdf_to_csv():
     The format of the csv file should have two columns: id and text
     """
     bar = progressbar.ProgressBar()
-    csv_data_file = _DATA_PATH + "data_tika.csv"
+    csv_data_file = os.path.join(_DATA_PATH, "data_tika.csv")
     Tika = autoclass('org.apache.tika.Tika')
     Metadata = autoclass('org.apache.tika.metadata.Metadata')
     FileInputStream = autoclass('java.io.FileInputStream')
@@ -110,7 +111,7 @@ def pdf_to_csv():
     meta = Metadata()
     with open(csv_data_file, "w", newline='') as csvfile:
         data_writer = csv.writer(csvfile)
-        data_writer.writerow(["document_id","document_text"])
+        data_writer.writerow(["document_id", "document_text"])
         for fn in bar(os.listdir(_PDF_PATH)):
             filename = os.path.join(_PDF_PATH, fn)
             if filename.endswith(".pdf"):
@@ -132,7 +133,7 @@ def pdf_to_csv_with_PyPDF():
     The format of the csv file should have two columns: id and text
     """
     bar = progressbar.ProgressBar()
-    csv_data_file = _DATA_PATH + "data.csv"
+    csv_data_file = os.path.join(_DATA_PATH, "data.csv")
     with open(csv_data_file, "w", newline='') as csvfile:
         data_writer = csv.writer(csvfile)
         data_writer.writerow(["document_id","document_text"])
@@ -151,7 +152,7 @@ def pdf_to_csv_with_PyPDF():
                     print("Error: {0}".format(e))
                 else:
                     #TODO: Check if text is not empty
-                    data_writer.writerow([fn,text])
+                    data_writer.writerow([fn, text.encode("utf-8")])
 
 
 def limpiar_texto(text):
@@ -159,7 +160,7 @@ def limpiar_texto(text):
     Funcion para limpiar los execivos end of lines que vienen tras la extraccion
     del texto en pdf.
     """
-    # TODO: Use NLTK's sentence segmentation. 
+    # TODO: Use NLTK's sentence segmentation.
     new_text = ""
     for line in text.split('\n'):
         if len(line) > 0:
@@ -169,8 +170,8 @@ def limpiar_texto(text):
     return new_text
 
 if __name__ == "__main__":
-    #scrapear_url_boletines()
-    #descargar_boletines()
-    pdf_to_csv()
-    #pdf_to_csv_with_PyPDF()
-    #limpiar_texto()
+    scrapear_url_boletines()
+    descargar_boletines()
+    #pdf_to_csv()
+    pdf_to_csv_with_PyPDF()
+    
